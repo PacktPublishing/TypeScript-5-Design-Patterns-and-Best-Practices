@@ -47,9 +47,37 @@ class Maybe<T> {
   }
 }
 
-import { pipe } from "fp-ts/function"
+
 import * as O from "fp-ts/Option"
 import { sequenceT } from "fp-ts/Apply"
+
+import * as S from 'fp-ts/string'
+
+import { Functor } from 'fp-ts/Functor'
+import * as Ap from 'fp-ts/Apply'
+
+import { pipe } from "fp-ts/function"
+import * as A from 'fp-ts/Array'
+import * as N from 'fp-ts/number'
+const numberMonoid = N.MonoidSum;
+const numbers2 = [1, 2, 3, 4]
+const sum = pipe(
+  numbers2,
+  A.foldMap(numberMonoid)(n => n)
+)
+
+const maybeNumbers = [O.some(1), O.some(2), O.none, O.some(4)]
+const traverseResult = pipe(
+  maybeNumbers,
+  A.traverse(O.Applicative)((n) => n)
+)
+
+// 1. Functor Example
+const numbers = [1, 2, 3, 4]
+const doubleArray = pipe(
+  numbers,
+  A.map(n => n * 2)
+)
 
 const add = (a: number) => (b: number) => a + b
 const maybeNumber1 = O.some(5)
@@ -90,3 +118,5 @@ console.log(concatAll(sums).value) // Output: 6
 
 const strings = [new Str("Hello, "), new Str("functional "), new Str("programming!")]
 console.log(concatAll(strings).value) // Output: "Hello, functional programming!"
+
+

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": [".eslintrc.js", "tsconfig.json", "scripts/**"],
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "AUTH_GITHUB_ID",
+    "AUTH_GITHUB_SECRET"
+  ],
+  "tasks": {
+    "codegen-entrypoints": {},
+    "codegen-tests": {
+      "outputs": ["server/__generated__/bigBoi/**"]
+    },
+    "prebuild": {
+      "cache": false
+    },
+    "ts-watch": {},
+    "build": {
+      "dependsOn": ["^build", "codegen-entrypoints", "prebuild"],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        "docs/typedoc/**"
+      ]
+    },
+    "examples-minimal-react#build": {
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    },
+    "lint-fix": {
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build", "codegen-tests"],
+      "cache": false
+    },
+    "test-ci": {
+      "dependsOn": ["^build", "codegen-tests"],
+      "cache": false
+    },
+    "test-dev": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test-start": {
+      "dependsOn": ["^build", "build"],
+      "cache": false
+    },
+    "test-watch": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build", "codegen-tests"]
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    }
+  }
+}

@@ -1,0 +1,76 @@
+---
+title: Improving performance in Apollo Client
+---
+
+## Redirecting to cached data
+
+In some cases, a query might request data that's already present in the Apollo Client cache thanks to a _different_ query that already ran. For example, your UI might have both a list view and a detail view with queries that fetch the same fields from a particular object.
+
+In cases like these, you can avoid sending your server a followup query that fetches identical data. To learn how, see [Cache redirects](../caching/advanced-topics#cache-redirects).
+
+## Prefetching data
+
+Prefetching involves executing queries for data _before_ that data needs to be rendered. It helps your application's UI feel more responsive to the user.
+
+Most of the time, prefetching involves querying for data as soon as you can guess that a user will _probably_ need it.
+
+For example, this code snippet calls `client.query` to execute a query when the user hovers over a particular link (to a page that uses the data returned by the query):
+
+<ExpansionPanel title="Click to expand">
+
+```jsx {19-24}
+function Feed() {
+  const { loading, error, data, client } = useQuery(GET_DOGS);
+
+  let content;
+  if (loading) {
+    content = <Fetching />;
+  } else if (error) {
+    content = <Error />;
+  } else {
+    content = (
+      <DogList
+        data={data.dogs}
+        renderRow={(type, data) => (
+          <Link
+            to={{
+              pathname: `/${data.breed}/${data.id}`,
+              state: { id: data.id }
+            }}
+            onMouseOver={() =>
+              client.query({
+                query: GET_DOG,
+                variables: { breed: data.breed }
+              })
+            }
+            style={{ textDecoration: "none" }}
+          >
+            <Dog {...data} url={data.displayImage} />
+          </Link>
+        )}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Header />
+      {content}
+    </View>
+  );
+}
+```
+
+</ExpansionPanel>
+
+When the `GET_DOG` query completes, its result is stored in the Apollo Client cache. This means that if the user then clicks the link, the dog's detail page can immediately populate that data from the cache, which feels instantaneous to the user.
+
+In addition to a mouse hover, here are some other suggestions for situations when prefetching can be helpful:
+
+* During a multi-step flow (such as a wizard), you can preload each _next_ step's data during each _current_ step.
+* If your app's analytics indicate a frequent transition between two particular views, you can use prefetching to optimize for that path.
+* If a region of a page has multiple tabs or slides (such as a carousel), you can preload data for some or all of them to make transitions feel snappier.
+
+A special form of prefetching is [store hydration from the server](./server-side-rendering/#rehydrating-the-client-side-cache), so you might also consider hydrating more data than is actually needed for the first page load to make other interactions faster.
+
+Feel free to submit a PR with suggestions for other preloading opportunities!

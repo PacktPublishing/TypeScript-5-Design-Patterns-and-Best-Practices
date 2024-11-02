@@ -1,0 +1,116 @@
+{
+  "name": "@trpc/next",
+  "version": "10.45.1",
+  "description": "The tRPC Next.js library",
+  "author": "KATT",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/next"
+  },
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/next"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "ts-watch": "tsc --project tsconfig.watch.json --watch",
+    "lint": "eslint --cache src"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./app-dir/client": {
+      "import": "./dist/app-dir/client.mjs",
+      "require": "./dist/app-dir/client.js",
+      "default": "./dist/app-dir/client.js"
+    },
+    "./app-dir/links/nextCache": {
+      "import": "./dist/app-dir/links/nextCache.mjs",
+      "require": "./dist/app-dir/links/nextCache.js",
+      "default": "./dist/app-dir/links/nextCache.js"
+    },
+    "./app-dir/links/nextHttp": {
+      "import": "./dist/app-dir/links/nextHttp.mjs",
+      "require": "./dist/app-dir/links/nextHttp.js",
+      "default": "./dist/app-dir/links/nextHttp.js"
+    },
+    "./app-dir/server": {
+      "import": "./dist/app-dir/server.mjs",
+      "require": "./dist/app-dir/server.js",
+      "default": "./dist/app-dir/server.js"
+    },
+    "./ssrPrepass": {
+      "import": "./dist/ssrPrepass.mjs",
+      "require": "./dist/ssrPrepass.js",
+      "default": "./dist/ssrPrepass.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "app-dir",
+    "ssrPrepass",
+    "!**/*.test.*"
+  ],
+  "dependencies": {},
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.59.15",
+    "@trpc/client": "10.45.1",
+    "@trpc/react-query": "10.45.1",
+    "@trpc/server": "^10.45.1",
+    "next": "15.0.2",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "@trpc/react-query": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.59.15",
+    "@trpc/client": "10.45.1",
+    "@trpc/react-query": "10.45.1",
+    "@trpc/server": "^10.45.1",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.17.3",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^9.13.0",
+    "express": "^4.17.1",
+    "next": "^15.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rollup": "^4.9.5",
+    "tsx": "^4.0.0",
+    "zod": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

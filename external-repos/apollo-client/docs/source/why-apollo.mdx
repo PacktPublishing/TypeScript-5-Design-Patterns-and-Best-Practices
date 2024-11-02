@@ -1,0 +1,184 @@
+---
+title: Why Apollo Client?
+description: Why choose Apollo Client to manage your data?
+---
+
+Apollo Client is a state management library that simplifies managing remote and local data with GraphQL. Apollo Client's intelligent caching and declarative approach to data fetching can help you iterate faster while writing less code. Additionally, if you need custom functionality, you can create your dream client by building extensions on top of Apollo Client.
+
+Let's jump right into what Apollo Client can offer you! 🚀
+
+## Declarative data fetching
+
+Apollo Client handles the request cycle from start to finish, including tracking loading and error states. There's no middleware or boilerplate code to set up before making your first request, and you don't need to worry about transforming or caching responses. All you have to do is describe the data your component needs and let Apollo Client do the heavy lifting. 💪
+
+Apollo Client's `useQuery` hook leverages React's [Hooks API](https://react.dev/reference/react) to bind a query to a component, enabling that component to render a query's results immediately. The `useQuery` hook encapsulates the logic for retrieving your data, tracking loading and error states, and updating your UI. This encapsulation makes integrating query results into your presentational components a breeze!
+
+Let's see what this looks like in practice with Apollo Client for React:
+
+```jsx
+function ShowDogs() {
+  const { loading, error, data } = useQuery(GET_DOGS);
+  if (error) return <Error />;
+  if (loading) return <Fetching />;
+
+  return <DogList dogs={data.dogs} />;
+}
+```
+
+In the example above, we're using the `useQuery` hook to fetch dogs from our GraphQL server and display them in a list. Once our data comes back, our `<DogList />` component reactively updates to display the new data.
+
+When switching to Apollo Client, you'll find you can remove much of your previous code related to data management. Some teams have reported deleting thousands of lines of code!
+
+Though you'll find yourself writing less code with Apollo Client, that doesn't mean you have to compromise on features. [The `useQuery` hook](./data/queries#usequery-api) supports advanced features like an optimistic UI, refetching, and pagination.
+
+## Combining local & remote data
+
+Thousands of developers have told us that Apollo Client excels at managing remote data, equating to roughly 80% of their data needs. But what about local data (e.g., global flags or device API results), which makes up the other 20% of the pie?
+
+Apollo Client includes [local state management](local-state/local-state-management/) features straight out of the box, enabling you to use your Apollo cache as the single source of truth for your application's data.
+
+By using Apollo Client's local state functionality, you can include local fields _and_ remotely fetched fields in the same query:
+
+```js
+const GET_DOG = gql`
+  query GetDogByBreed($breed: String!) {
+    dog(breed: $breed) {
+      images {
+        url
+        id
+        isLiked @client
+      }
+    }
+  }
+`;
+```
+
+In the above example, we're querying the [local-only field](./local-state/managing-state-with-field-policies) `isLiked` while fetching data from our GraphQL server. Your components contain local and remote data; now, your queries can too!
+
+Managing your data with Apollo Client lets you take advantage of GraphQL as a unified interface for _all_ of your data. Using the [Apollo Client Devtools](./development-testing/developer-tooling#apollo-client-devtools), you can inspect both your local and remote schemas using GraphiQL.
+
+## Zero-config caching
+
+Caching a graph is no easy task, but we've spent years solving this problem. We've found that _normalization_ is the key to maintaining consistent data across multiple components in an application.
+
+One of the key features that sets Apollo Client apart from other data management solutions is its local, in-memory, [normalized](./caching/overview#data-normalization) cache.
+
+The Apollo Client cache is easy to get started with and [configure](./caching/cache-configuration) as you go:
+
+```js
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+});
+```
+
+Once you've passed your cache to `ApolloClient`, whenever Apollo Client receives query response data, it automatically attempts to identify and store the distinct objects (i.e., those with a `__typename` and an id property) from a query's data into separate entries within its cache.
+
+Let's look at some practical examples of how this caching mechanism can make your application more efficient.
+
+The below query, `GET_ALL_DOGS`, fetches a list of dogs and information about each dog:
+
+```js
+const GET_ALL_DOGS = gql`
+  query GetAllDogs {
+    dogs {
+      id
+      breed
+      displayImage
+    }
+  }
+`;
+```
+
+The below mutation, `UPDATE_DISPLAY_IMAGE`, updates a specified dog's `displayImage` and returns the updated dog:
+
+```js
+const UPDATE_DISPLAY_IMAGE = gql`
+  mutation UpdateDisplayImage($id: String!, $displayImage: String!) {
+    updateDisplayImage(id: $id, displayImage: $displayImage) {
+      id
+      displayImage
+    }
+  }
+`;
+```
+
+When we run the `UPDATE_DISPLAY_IMAGE` mutation, we want to ensure that our dog's image is updated _everywhere_ in our application. We also need to ensure we update any previously cached data about that dog.
+
+Our `UPDATE_DISPLAY_IMAGE` mutation returns the object the mutation modified (i.e., the `id` and `displayImage` of the dog), enabling Apollo Client to automatically overwrite the existing fields of any _previously cached_ object with the same `id`. Tying it all together, if we've already run the `GET_ALL_DOGS` query before Apollo Client runs the `UPDATE_DISPLAY_IMAGE` mutation, it _automatically_ updates the changed dog's `displayImage` in our local cache. ✨
+
+> For more examples of updating a cache with mutations, see [Updating the cache directly](./data/mutations#updating-the-cache-directly).
+
+The ability to update our cache under the hood can also help in scenarios where we want to avoid _refetching_ information already contained in our cache.
+
+For example, let's say we want to navigate to the details page for a particular dog. Here's what the query would look like:
+
+```js
+const GET_DOG = gql`
+  query GetDog {
+    dog(id: "abc") {
+      id
+      breed
+      displayImage
+    }
+  }
+`;
+```
+
+If we've run the above `GET_ALL_DOGS` query at any point, the data for our `GET_DOG` query might _already_ be in our local cache. We can tell Apollo Client where to check first for any cached `Dog` objects, avoiding refetching information if it already exists in our cache.
+
+Below we define a custom [`FieldPolicy`](./caching/advanced-topics/#cache-redirects) that returns a reference to our previously cached `Dog` object data:
+
+```js
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+const cache = new InMemoryCache({
+  typePolicies: {
+    Query: {
+      fields: {
+        dog(_, { args, toReference }) {
+          return toReference({
+            __typename: 'Dog',
+            id: args.id,
+          });
+        },
+      },
+    },
+  },
+});
+
+const client = new ApolloClient({ cache });
+```
+
+The above field policy enables our `GET_DOG` query to read previously stored data straight from our cache instead of sending off an unnecessary query.
+
+> Learn more about [Caching in Apollo Client](https://www.apollographql.com/docs/react/caching/overview).
+
+## Vibrant ecosystem
+
+Apollo Client is easy to get started with but extensible enough for when you want to build out more advanced features. If you need custom functionality that `@apollo/client` doesn't cover, you can use [Apollo Link's architecture](./api/link/introduction) to create your dream client by building an extension on top of Apollo Client.
+
+We're always impressed by what our contributors have built on top of Apollo Client. Check out some of our community's extensions below:
+
+- [`apollo3-cache-persist`](https://github.com/apollographql/apollo-cache-persist): Simple persistence for your Apollo cache ([@jamesreggio](https://github.com/jamesreggio)).
+- [`apollo-storybook-decorator`](https://github.com/abhiaiyer91/apollo-storybook-decorator): Wrap your React Storybook stories with Apollo Client ([@abhiaiyer91](https://github.com/abhiaiyer91)).
+- [AppSync by AWS](https://blog.apollographql.com/aws-appsync-powered-by-apollo-df61eb706183): Amazon's real-time GraphQL client uses Apollo Client under the hood.
+- [`apollo-augmented-hooks`](https://github.com/appmotion/apollo-augmented-hooks): Adding additional functionality for Apollo Client's hooks ([appmotion](https://github.com/appmotion)).
+- [`apollo-cache-policies`](https://github.com/NerdWalletOSS/apollo-cache-policies): Extending Apollo Client's cache with support for advanced cache policies ([NerdWalletOSS](https://github.com/NerdWalletOSS)).
+
+When you choose to use Apollo Client to manage your data, you also gain the support of our fantastic community. There are thousands of developers in our [community forums](https://community.apollographql.com) for you to share ideas with.
+
+You can also read articles on best practices and announcements on the frequently updated [Apollo blog](https://blog.apollographql.com/).
+
+## Case studies
+
+Companies ranging from enterprises to startups trust Apollo Client to power their most critical web and native applications. If you'd like to learn more about how transitioning to GraphQL and Apollo simplified engineers' workflows and improved companies' products, check out these case studies:
+
+- [The New York Times](https://open.nytimes.com/the-new-york-times-now-on-apollo-b9a78a5038c): Learn how The New York Times switched from Relay to Apollo & implemented features in their app such as SSR and persisted queries.
+- [Express](https://blog.apollographql.com/changing-the-architecture-of-express-com-23c950d43323): Easy-to-use pagination with Apollo helped improve the Express eCommerce team's key product pages.
+- [Major League Soccer](https://blog.apollographql.com/reducing-our-redux-code-with-react-apollo-5091b9de9c2a): MLS' switch from Redux to Apollo for state management enabled them to delete nearly all of their Redux code.
+- [Expo](https://blog.apollographql.com/using-graphql-apollo-at-expo-4c1f21f0f115): Developing their React Native app with Apollo enabled the Expo engineers to focus on improving their product instead of writing data fetching logic.
+- [KLM](https://youtu.be/T2njjXHdKqw): Learn how the KLM team scaled their Angular app with GraphQL and Apollo.
+
+If your company uses Apollo Client in production, we'd love to feature a case study on our blog! Please get in touch via [our community forums](https://community.apollographql.com) so we can learn more about how you're using Apollo. Alternatively, please file a PR if you already have a blog post or a conference talk that you'd like to feature here.
