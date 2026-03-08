@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.3",
-    "esbuild": "^0.17.10",
+    "esbuild": "^0.25.0",
     "eslint": "^9.13.0",
     "serverless": "^3.18.1",
     "serverless-esbuild": "^1.39.0",
